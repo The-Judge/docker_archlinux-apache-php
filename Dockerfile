@@ -1,12 +1,66 @@
 FROM derjudge/archlinux
 MAINTAINER Marc Richter <mail@marc-richter.info>
 
-RUN yes | pacman -Syy
-RUN yes | pacman -S extra/mariadb \
-    extra/php-sqlite \
-    extra/php-pgsql \
+# Update pacman database and fix possibly incorrect pacman db format after world upgrade
+RUN pacman -Syy \
+  && pacman-db-upgrade
+
+# Install additional packages
+RUN yes | pacman -S \
+    extra/git \
+    extra/mariadb \
     extra/php-apache \
+    extra/php-apcu \
+    extra/php-gd \
     extra/php-intl \
     extra/php-mcrypt \
-    extra/php-apcu | cat
+    extra/php-pear \
+    extra/php-pgsql \
+    extra/php-sqlite \
+    extra/wget \
+    | cat
+# base-devel - Ugly workarround needed due to selection dialogue
+RUN echo "" > /tmp/input && echo "Y" >> /tmp/input \
+  && pacman -S base-devel < /tmp/input \
+  && rm -f /tmp/input
+# php-xhprof
+RUN curl -Ls "https://aur.archlinux.org/packages/ph/php-xhprof/php-xhprof.tar.gz" \
+  | tar -xz --directory /usr/src \
+  && chown nobody -R /usr/src/php-xhprof \
+  && cd /usr/src/php-xhprof \
+  && su -c "makepkg -m" -s /bin/bash nobody \
+  && yes | pacman -U php-xhprof-*.pkg.tar.xz \
+  && cd \
+  && rm -rf /usr/src/php-xhprof
+# graphviz
+RUN echo "" > /tmp/input && echo "Y" >> /tmp/input \
+  && pacman -S graphviz < /tmp/input \
+  && rm -f /tmp/input
 
+# Clear pacman caches
+RUN yes | pacman -Scc
+
+# Optimize pacman database
+RUN pacman-optimize
+
+# Modify php.ini
+# Comment out open_basedir
+RUN sed -i'' 's#^\(open_basedir.*$\)#;\1#g' /etc/php/php.ini
+
+# Add init script
+ADD helpers/init /
+RUN chmod +x /init
+
+# Add Apache HTTPd config
+RUN rm -rf /etc/httpd/conf/httpd.conf
+RUN rm -f  /etc/httpd/conf/extra/httpd-default.conf
+ADD templates/httpd/httpd.conf /etc/httpd/conf/httpd.conf
+ADD templates/httpd/extra/httpd-default.conf /etc/httpd/conf/extra/httpd-default.conf
+ADD templates/httpd/modules.conf /etc/httpd/conf/modules.conf
+
+VOLUME ["/app"]
+VOLUME ["/var/log/httpd"]
+
+EXPOSE 80
+
+CMD ["/init"]
