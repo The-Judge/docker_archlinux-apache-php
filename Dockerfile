@@ -7,6 +7,7 @@ RUN pacman -Syy \
 
 # Install additional packages
 RUN yes | pacman -S \
+    core/ed \
     extra/git \
     extra/mariadb \
     extra/php-apache \
@@ -17,6 +18,7 @@ RUN yes | pacman -S \
     extra/php-pear \
     extra/php-pgsql \
     extra/php-sqlite \
+    extra/re2c \
     extra/wget \
     | cat
 # base-devel - Ugly workarround needed due to selection dialogue
