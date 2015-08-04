@@ -48,6 +48,17 @@ RUN pacman-optimize
 # Modify php.ini
 # Comment out open_basedir
 RUN sed -i'' 's#^\(open_basedir.*$\)#;\1#g' /etc/php/php.ini
+# Load MySQL modules
+RUN sed -i'' 's#^;\(extension=.*mysql.*\)#\1#g' /etc/php/php.ini
+# Load SQLite modules
+RUN sed -i'' 's#^;\(extension=.*sqlite.*\)#\1#g' /etc/php/php.ini
+# Load zip module
+RUN sed -i'' 's#^;\(extension=zip.so\)#\1#g' /etc/php/php.ini
+# Load gd module
+RUN sed -i'' 's#^;\(extension=gd.so\)#\1#g' /etc/php/php.ini
+# Load opcache module
+RUN sed -i'' 's#^;\(zend_extension=opcache.so\)#\1#g' /etc/php/php.ini
+RUN sed -i'' 's#^;\(opcache.enable_cli=\).*$#\11#g' /etc/php/php.ini
 
 # Add init script
 ADD helpers/init /

@@ -26,6 +26,19 @@ if [ -e "/extra/init" ]; then
   divider
 fi
 
+# Set Apache admin-mail if set
+if [ ! -z "${SERVER_ADMIN}" ]; then
+    sed -i'' "s#admin@your-domain\.com#${SERVER_ADMIN}#g" /etc/httpd/conf/httpd.conf
+fi
+
+# Set PHP date.timezone
+if [ ! -z "$(php -i | egrep '^date.timezone => no value => no value')" ]; then
+  if [ -z "${PHP_TZ}" ]; then
+    PHP_TZ="Europe/Berlin"
+  fi
+  echo -e "\ndate.timezone = ${PHP_TZ}" >> /etc/php/php.ini
+fi
+
 # Print some parsed configs
 echo "PHP settings:"
 /usr/sbin/php -i
@@ -39,7 +52,4 @@ divider
 divider
 
 # Start Apache
-if [ -z "${SERVER_ADMIN}" ]; then
-    export SERVER_ADMIN="you@example.com"
-fi
-/usr/sbin/apachectl -t && /usr/sbin/apachectl -k start
+/usr/sbin/apachectl -t && /usr/sbin/apachectl -D FOREGROUND -k start
