@@ -49,7 +49,8 @@ RUN pacman-optimize
 # Comment out open_basedir
 RUN sed -i'' 's#^\(open_basedir.*$\)#;\1#g' /etc/php/php.ini
 # Load MySQL modules
-RUN sed -i'' 's#^;\(extension=.*mysql.*\)#\1#g' /etc/php/php.ini
+RUN sed -i'' 's#^;\(extension=.*pdo.*mysql.*\)#\1#g' /etc/php/php.ini
+RUN sed -i'' 's#^;\(extension=.*mysqli.*\)#\1#g' /etc/php/php.ini
 # Load SQLite modules
 RUN sed -i'' 's#^;\(extension=.*sqlite.*\)#\1#g' /etc/php/php.ini
 # Load zip module
