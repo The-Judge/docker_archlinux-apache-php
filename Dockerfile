@@ -60,6 +60,8 @@ RUN sed -i'' 's#^;\(extension=gd.so\)#\1#g' /etc/php/php.ini
 # Load opcache module
 RUN sed -i'' 's#^;\(zend_extension=opcache.so\)#\1#g' /etc/php/php.ini
 RUN sed -i'' 's#^;\(opcache.enable_cli=\).*$#\11#g' /etc/php/php.ini
+# Activate php_error.log
+RUN sed -i'' 's#^;\(error_log = php_errors.log\)#\1#g' /etc/php/php.ini
 
 # Add init script
 ADD helpers/init /
