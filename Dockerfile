@@ -71,7 +71,6 @@ ADD templates/httpd/httpd.conf /etc/httpd/conf/httpd.conf
 ADD templates/httpd/extra/httpd-default.conf /etc/httpd/conf/extra/httpd-default.conf
 ADD templates/httpd/modules.conf /etc/httpd/conf/modules.conf
 
-VOLUME ["/app"]
 VOLUME ["/var/log/httpd"]
 
 EXPOSE 80
