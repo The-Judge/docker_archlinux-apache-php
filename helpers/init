@@ -22,6 +22,8 @@ if [ -e "/extra/init" ]; then
     chmod +x "/extra/init"
   fi
   echo "Starting execution of your user-defined script (/extra/init):"
+  # https://github.com/docker/docker/issues/9547
+  sync
   /extra/init
   divider
 fi
