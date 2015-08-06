@@ -18,6 +18,7 @@ RUN yes | pacman -S \
     extra/php-pear \
     extra/php-pgsql \
     extra/php-sqlite \
+    extra/postfix \
     extra/re2c \
     extra/wget \
     | cat
