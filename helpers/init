@@ -33,12 +33,17 @@ if [ ! -z "${SERVER_ADMIN}" ]; then
     sed -i'' "s#admin@your-domain\.com#${SERVER_ADMIN}#g" /etc/httpd/conf/httpd.conf
 fi
 
-# Set PHP date.timezone
+# Set PHP date.timezone and system Timezone
+if [ -z "${TZ}" ]; then
+  TZ="Europe/Berlin"
+fi
+# System
+if [ -e /usr/share/zoneinfo/${TZ} ]; then
+  ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
+fi
+# PHP
 if [ ! -z "$(php -i | egrep '^date.timezone => no value => no value')" ]; then
-  if [ -z "${PHP_TZ}" ]; then
-    PHP_TZ="Europe/Berlin"
-  fi
-  echo -e "\ndate.timezone = ${PHP_TZ}" >> /etc/php/php.ini
+  echo -e "\ndate.timezone = ${TZ}" >> /etc/php/php.ini
 fi
 
 # Print some parsed configs
