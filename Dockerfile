@@ -74,6 +74,7 @@ ADD templates/httpd/httpd.conf /etc/httpd/conf/httpd.conf
 ADD templates/httpd/extra/httpd-default.conf /etc/httpd/conf/extra/httpd-default.conf
 ADD templates/httpd/modules.conf /etc/httpd/conf/modules.conf
 RUN mkdir /app
+RUN touch /var/log/php_errors.log && chmod 777 /var/log/php_errors.log
 
 VOLUME ["/var/log/httpd"]
 
