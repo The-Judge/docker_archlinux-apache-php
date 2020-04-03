@@ -2,7 +2,8 @@ FROM derjudge/archlinux
 LABEL maintainer="Marc Richter <mail@marc-richter.info>"
 
 # Install additional packages
-RUN yes | pacman -S \
+RUN yes | pacman -Sy \
+  && yes | pacman -S \
     core/ed \
     extra/git \
     extra/mariadb \
@@ -21,8 +22,7 @@ RUN yes | pacman -S \
 RUN echo "" > /tmp/input && echo "Y" >> /tmp/input \
   && pacman -S base-devel graphviz < /tmp/input \
   && rm -f /tmp/input \
-  && yes | pacman -Scc \
-  && pacman-optimize
+  && yes | pacman -Scc
 
 # Modify php.ini
 # Comment out open_basedir
