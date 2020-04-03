@@ -1,10 +1,6 @@
 FROM derjudge/archlinux
 LABEL maintainer="Marc Richter <mail@marc-richter.info>"
 
-# Update pacman database and fix possibly incorrect pacman db format after world upgrade
-RUN pacman -Syy \
-  && pacman-db-upgrade
-
 # Install additional packages
 RUN yes | pacman -S \
     core/ed \
@@ -15,7 +11,6 @@ RUN yes | pacman -S \
     extra/php-gd \
     extra/php-intl \
     extra/php-mcrypt \
-#    extra/php-pear \
     extra/php-pgsql \
     extra/php-sqlite \
     extra/postfix \
@@ -24,17 +19,10 @@ RUN yes | pacman -S \
     | cat
 # base-devel - Ugly workarround needed due to selection dialogue
 RUN echo "" > /tmp/input && echo "Y" >> /tmp/input \
-  && pacman -S base-devel < /tmp/input \
-  && rm -f /tmp/input
-RUN echo "" > /tmp/input && echo "Y" >> /tmp/input \
-  && pacman -S graphviz < /tmp/input \
-  && rm -f /tmp/input
-
-# Clear pacman caches
-RUN yes | pacman -Scc
-
-# Optimize pacman database
-RUN pacman-optimize
+  && pacman -S base-devel graphviz < /tmp/input \
+  && rm -f /tmp/input \
+  && yes | pacman -Scc \
+  && pacman-optimize
 
 # Modify php.ini
 # Comment out open_basedir
