@@ -1,62 +1,53 @@
-FROM derjudge/archlinux
+FROM php:apache
 LABEL maintainer="Marc Richter <mail@marc-richter.info>"
 
-# Install additional packages
-RUN yes | pacman -Sy \
-  && yes | pacman -S \
-    core/ed \
-    extra/git \
-    extra/mariadb \
-    extra/php-apache \
-    extra/php-apcu \
-    extra/php-gd \
-    extra/php-intl \
-    extra/php-mcrypt \
-    extra/php-pgsql \
-    extra/php-sqlite \
-    extra/postfix \
-    extra/re2c \
-    extra/wget \
-    | cat
-# base-devel - Ugly workarround needed due to selection dialogue
-RUN echo "" > /tmp/input && echo "Y" >> /tmp/input \
-  && pacman -S base-devel graphviz < /tmp/input \
-  && rm -f /tmp/input \
-  && yes | pacman -Scc
+ARG MYSQL_DATABASE
+ARG MYSQL_ROOT_PASSWORD
 
-# Modify php.ini
-# Comment out open_basedir
-RUN sed -i'' 's#^\(open_basedir.*$\)#;\1#g' /etc/php/php.ini
-# Load MySQL modules
-RUN sed -i'' 's#^;\(extension=.*pdo.*mysql.*\)#\1#g' /etc/php/php.ini
-RUN sed -i'' 's#^;\(extension=.*mysqli.*\)#\1#g' /etc/php/php.ini
-# Load SQLite modules
-RUN sed -i'' 's#^;\(extension=.*sqlite.*\)#\1#g' /etc/php/php.ini
-# Load zip module
-RUN sed -i'' 's#^;\(extension=zip.so\)#\1#g' /etc/php/php.ini
-# Load gd module
-RUN sed -i'' 's#^;\(extension=gd.so\)#\1#g' /etc/php/php.ini
-# Load opcache module
-RUN sed -i'' 's#^;\(zend_extension=opcache.so\)#\1#g' /etc/php/php.ini
-RUN sed -i'' 's#^;\(opcache.enable_cli=\).*$#\11#g' /etc/php/php.ini
-# Activate php_error.log
-RUN sed -i'' 's#^;\(error_log = \).*\.log$#\1/var/log/php_errors.log#g' /etc/php/php.ini
+ENV DEBIAN_FRONTEND noninteractive
 
-# Add init script
-ADD helpers/init /
-RUN chmod +x /init
+# Install prerequisites from apt
+RUN apt-get update && apt-get install -y \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libpng-dev \
+        libxml2-dev \
+        libzip-dev \
+        git \
+        mariadb-client \
+        wget \
+        unzip \
+    && apt-get clean
 
-# Add Apache HTTPd config
-RUN rm -rf /etc/httpd/conf/httpd.conf
-RUN rm -f  /etc/httpd/conf/extra/httpd-default.conf
-ADD templates/httpd/httpd.conf /etc/httpd/conf/httpd.conf
-ADD templates/httpd/extra/httpd-default.conf /etc/httpd/conf/extra/httpd-default.conf
-ADD templates/httpd/modules.conf /etc/httpd/conf/modules.conf
-RUN mkdir /app
-RUN touch /var/log/php_errors.log && chmod 777 /var/log/php_errors.log
+# Get the latest tagged version of projectsend
+RUN git clone https://github.com/projectsend/projectsend.git /var/www/html/ \
+    && cd /var/www/html/ \
+    && git checkout r$(git tag | sed 's#^r##g' | sort -n | tail -n 1) \
+    && rm -rf .git
 
-VOLUME ["/var/log/httpd"]
+# Activate required PHP modules
+RUN docker-php-source extract \
+    && docker-php-ext-configure pdo_mysql && docker-php-ext-install pdo_mysql \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg && docker-php-ext-install gd \
+    && docker-php-ext-configure gettext && docker-php-ext-install gettext \
+    && docker-php-ext-configure zip && docker-php-ext-install zip \
+    && docker-php-source delete
 
-EXPOSE 80
+# Install composer
+COPY files/get_composer.sh /tmp/get_composer.sh
+RUN /bin/sh /tmp/get_composer.sh
 
-CMD ["/init"]
+RUN cd /var/www/html ; composer install
+RUN cp /var/www/html/config/config.sample.php /var/www/html/config/config.php
+RUN sed -i'' "s#'DB_NAME', 'database'#'DB_NAME', 'DOCKER_REPLACE_ME'#g" /var/www/html/config/config.php \
+    && sed -i'' "s#DOCKER_REPLACE_ME#${MYSQL_DATABASE}#g" /var/www/html/config/config.php \
+    && sed -i'' "s#'DB_HOST', 'localhost'#'DB_HOST', 'db'#g" /var/www/html/config/config.php \
+    && sed -i'' "s#'DB_USER', 'username'#'DB_USER', 'root'#g" /var/www/html/config/config.php \
+    && sed -i'' "s#'DB_PASSWORD', 'password'#'DB_PASSWORD', 'DOCKER_REPLACE_ME'#g" /var/www/html/config/config.php \
+    && sed -i'' "s#DOCKER_REPLACE_ME#${MYSQL_ROOT_PASSWORD}#g" /var/www/html/config/config.php
+
+RUN a2enmod rewrite
+RUN sed -i'' "s#DocumentRoot.*/var/www/html#DocumentRoot /var/www/html/public#g" /etc/apache2/sites-enabled/000-default.conf
+
+COPY files/wait4db.sh /usr/local/bin/wait4db.sh
+RUN chmod +x /usr/local/bin/wait4db.sh
