@@ -1,5 +1,5 @@
 FROM derjudge/archlinux
-MAINTAINER Marc Richter <mail@marc-richter.info>
+LABEL maintainer="Marc Richter <mail@marc-richter.info>"
 
 # Update pacman database and fix possibly incorrect pacman db format after world upgrade
 RUN pacman -Syy \
@@ -26,15 +26,6 @@ RUN yes | pacman -S \
 RUN echo "" > /tmp/input && echo "Y" >> /tmp/input \
   && pacman -S base-devel < /tmp/input \
   && rm -f /tmp/input
-## php-xhprof
-#RUN git clone https://aur.archlinux.org/php-xhprof.git /usr/src/php-xhprof \
-#  && chown nobody -R /usr/src/php-xhprof \
-#  && cd /usr/src/php-xhprof \
-#  && su -c "makepkg -m" -s /bin/bash nobody \
-#  && yes | pacman -U php-xhprof-*.pkg.tar.xz \
-#  && cd \
-#  && rm -rf /usr/src/php-xhprof
-# graphviz
 RUN echo "" > /tmp/input && echo "Y" >> /tmp/input \
   && pacman -S graphviz < /tmp/input \
   && rm -f /tmp/input
